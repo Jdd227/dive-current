@@ -13,7 +13,7 @@
     <h1>Dive Current</h1>
     <p>Puget Sound bathymetry, tides, modeled currents & DPV planning</p>
   </div>
-  <div class="build" id="buildMarker">v1.0 · Static</div>
+  <div class="build" id="buildMarker">v1.1 · NOAA</div>
 </header>
 
 <main class="layout">
@@ -31,11 +31,19 @@
     <div class="layer-toolbar">
       <button id="bathyMode" class="active">Puget Sound Bathymetry</button>
       <button id="standardMode">Standard map</button>
-      <button id="toggleCurrents" class="active">Current flow</button>
+      <button id="toggleCurrents" class="active">Currents ON</button>
+      <button id="flowMode" class="active">Flow</button><button id="arrowMode">Arrows</button>
     </div>
 
     <div id="mapMessage" class="map-message hidden"></div>
+    <div id="mapTideChip" class="map-tide-chip" aria-live="polite">NOAA tide data loading…</div>
 
+    <section class="map-timelines" aria-label="Forecast and tide timeline controls">
+      <div class="time-header"><strong>Explore currents & tides</strong><span id="selectedTimeValue">Loading…</span></div>
+      <div class="time-slider-row"><label for="currentTimeline">Surface-current forecast</label><input id="currentTimeline" type="range" min="0" max="0" value="0" disabled/><output id="currentTimelineValue">Loading NOAA model…</output></div>
+      <div class="time-slider-row"><label for="tideTimeline">NOAA tide level</label><input id="tideTimeline" type="range" min="0" max="0" value="0" disabled/><output id="tideTimelineValue">Loading tides…</output></div>
+      <div class="time-map-hint">Both sliders share one map time. Currents: verified surface-model grid only. Tides: selected NOAA station.</div>
+    </section>
     <div class="legend">
       <span><i class="swatch bathy"></i> WA DNR grayscale relief</span>
       <span><i class="swatch contour"></i> 20 ft contours</span>
@@ -69,6 +77,21 @@
     </section>
 
     <section class="card">
+      <h2>Tides</h2>
+      <label>Tide station
+        <select id="tideStation">
+          <option value="9446484">Tacoma, Commencement Bay, Sitcum Waterway</option>
+        </select>
+      </label>
+      <div id="tideSummary" class="tide-summary"></div>
+      <div id="tideGraph" class="tide-graph">
+        <div class="loading">Loading NOAA tide predictions…</div>
+      </div>
+      <div id="tideEvents" class="tide-events"></div>
+      <p class="note">Cached official NOAA predictions (UTC converted to your local timezone); feet above MLLW.</p>
+    </section>
+
+    <section class="card">
       <h2>Dive planning</h2>
       <div class="metric"><span>Total route</span><strong id="routeTotal">0 ft</strong></div>
       <label>Estimated DPV speed · knots
@@ -85,26 +108,11 @@
       <div id="depthList" class="empty">No depth markers.</div>
     </section>
 
-    <section class="card">
-      <h2>Tides</h2>
-      <label>Tide station
-        <select id="tideStation">
-          <option value="9446484">Tacoma, Commencement Bay, Sitcum Waterway</option>
-        </select>
-      </label>
-      <div id="tideSummary" class="tide-summary"></div>
-      <div id="tideGraph" class="tide-graph">
-        <div class="loading">Loading NOAA tide predictions…</div>
-      </div>
-      <div id="tideEvents" class="tide-events"></div>
-      <p class="note">Cached official NOAA predictions (UTC converted to your local timezone); feet above MLLW.</p>
-    </section>
-
     <section class="card source-card">
       <h2>Data sources</h2>
       <p><strong>Bathymetry:</strong> Washington DNR 1 m CoNED MLLW raster, grayscale shaded relief, with close-zoom 20 ft contours.</p>
       <p><strong>Tides:</strong> NOAA CO-OPS predictions.</p>
-      <p><strong>Currents:</strong> NOAA SSCOFS near-surface model guidance, processed by GitHub Actions; timestamps and availability are checked.</p>
+      <p><strong>Currents:</strong> NOAA SSCOFS near-surface forecast, downsampled from the model grid. Model resolution is not suitable for estimating flow inside narrow channels or immediately adjacent to shore.</p>
       <p class="warning-text">Planning aid only. Model guidance and bathymetry are not a substitute for navigation, site knowledge, or dive-team judgment.</p>
     </section>
   </aside>

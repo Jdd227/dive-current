@@ -29,7 +29,7 @@ THREDDS = 'https://opendap.co-ops.nos.noaa.gov/thredds'
 CYCLES = (3, 9, 15, 21)
 LEADS = (1,3,6,9,12,15,18,21,24,30,36,48)
 # Stride in model rows/columns, not arbitrary interpolation.
-STRIDE = 9
+STRIDE = 3
 REGION = (46.7, 49.2, -124.5, -121.5) # latitude min/max, longitude min/max
 
 def get_dds(url, timeout=16):

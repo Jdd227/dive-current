@@ -1,6 +1,6 @@
 /* RunTime Dive Current v1.0 • Static GitHub Pages deployment. NOAA model currents and tide forecasts are populated only by validated scheduled source data. */
 'use strict';
-const BUILD='1.0.0';
+const BUILD='1.1.0';
 const FT_PER_M=3.280839895, KTS_PER_MPS=1.943844492;
 const STORE='dive-current-state-v097', OLD_STORE='dive-current-state-v096';
 const DNR_DEPTH='https://gis.dnr.wa.gov/image/rest/services/Aquatics/WA_bathymetry_CoNED_MLLW/ImageServer';
@@ -126,9 +126,16 @@ function viewportParams(){
   };
 }
 function imageUrl(base,v){
+  // ArcGIS image pixels must be generated in the SAME EPSG:3857 projection
+  // as Leaflet. EPSG:4326 images warped when projected into a Leaflet rectangle,
+  // with increasing shoreline misregistration at wider map extents.
+  const lowerLeft=L.CRS.EPSG3857.project(L.latLng(v.south,v.west));
+  const upperRight=L.CRS.EPSG3857.project(L.latLng(v.north,v.east));
+  const commonScale=Math.min(1,3000/v.width,3000/v.height);
+  const width=Math.round(v.width*commonScale),height=Math.round(v.height*commonScale);
   const q=new URLSearchParams({
-    f:'image', bbox:`${v.west},${v.south},${v.east},${v.north}`,
-    bboxSR:'4326',imageSR:'4326',size:`${Math.min(3000,v.width)},${Math.min(3000,v.height)}`,
+    f:'image',bbox:`${lowerLeft.x},${lowerLeft.y},${upperRight.x},${upperRight.y}`,
+    bboxSR:'3857',imageSR:'3857',size:`${width},${height}`,
     format:'png32',transparent:'true',interpolation:'RSP_BilinearInterpolation'
   });
   return `${base}/exportImage?${q}`;
@@ -196,7 +203,7 @@ async function refreshBathymetry(){
   if(v.zoom<10){clearBathyOverlay();hideOceanFallback();return;}
   dnrOverlayOk=false;
   replaceBathyOverlay(imageUrl(DNR_BATHY,v),v.bounds,{
-    opacity:v.zoom>=15?.93:v.zoom>=13?.88:.80,
+    opacity:v.zoom>=15?.70:v.zoom>=13?.63:.52,
     onError:()=>{
       showOceanFallback();
       showMapMessage('DNR relief unavailable; regional ocean map displayed.',3000);
@@ -376,13 +383,14 @@ async function queryDnrDepth(latlng){
 async function addDepthPin(latlng){
   showMapMessage('Reading WA DNR depth…',10000);
   try{
+    if(isLakeWashingtonView())throw new Error('Marine CoNED depth does not cover Lake Washington');
     const depth=await queryDnrDepth(latlng);
     const pin={id:(typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'?crypto.randomUUID():String(Date.now()+Math.random())),lat:latlng.lat,lng:latlng.lng,depth,source:'DNR CoNED MLLW'};
     depthPins.push(pin);drawDepthPins();saveState();
     showMapMessage(`Depth marker: ${Math.round(depth)} ft MLLW`,1800);
   }catch(e){
     console.error(e);
-    showMapMessage('No DNR MLLW depth was returned at that point.',3000);
+    showMapMessage('Depth unavailable here: marine DNR CoNED coverage only.',3500);
   }
 }
 function drawDepthPins(){
@@ -390,7 +398,8 @@ function drawDepthPins(){
   depthPins.forEach(p=>{
     const icon=L.divIcon({className:'',html:`<div class="depth-label">${Math.round(p.depth)} ft ×</div>`,iconSize:null});
     const m=L.marker([p.lat,p.lng],{icon}).addTo(map);
-    m.on('click',()=>{
+    m.on('click',event=>{
+      L.DomEvent.stopPropagation(event);
       const idx=depthPins.findIndex(x=>x.id===p.id);
       if(idx>=0){map.removeLayer(m);depthPins.splice(idx,1);drawDepthPins();saveState()}
     });
@@ -435,15 +444,33 @@ async function loadStations(){
     }
   }catch(e){console.warn('Cached tide-station list unavailable:',e)}
 }
+async function fetchOfficialTidesDirect(stationId){
+  // Browser fallback only. If the NOAA API blocks cross-origin requests, keep
+  // the unavailable state rather than fill in missing data.
+  const now=new Date(),start=new Date(now.getTime()-86400000),end=new Date(now.getTime()+3*86400000);
+  const date=d=>d.toISOString().slice(0,10).replace(/-/g,'');
+  const query=new URLSearchParams({product:'predictions',application:'RunTimeDiveCurrent',
+    begin_date:date(start),end_date:date(end),station:String(stationId),
+    datum:'MLLW',units:'english',time_zone:'gmt',format:'json',interval:'6'});
+  const response=await fetch('https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?'+query);
+  if(!response.ok)throw new Error(`NOAA direct API HTTP ${response.status}`);
+  const raw=await response.json();
+  if(raw.error||!Array.isArray(raw.predictions)||raw.predictions.length<2)
+    throw new Error(raw.error?.message||'NOAA returned no tide predictions');
+  return {generated_at:new Date().toISOString(),predictions:raw.predictions,events:[]};
+}
 async function loadTides(){
   const graph=document.getElementById('tideGraph');
   graph.innerHTML='<div class="loading">Loading published NOAA tide predictions…</div>';
   try{
     // Station names are discovered from data/stations.json. Forecasts are updated by a daily Action.
     const r=await fetch(`data/tides/${encodeURIComponent(tideStationId)}.json`,{cache:'no-store'});
-    if(!r.ok)throw new Error(`No cached predictions for station ${tideStationId}`);
-    const data=await r.json();
-    const generated=new Date(data.generated_at);
+    let data=r.ok?await r.json():await fetchOfficialTidesDirect(tideStationId);
+    let generated=new Date(data.generated_at);
+    if(!Number.isFinite(generated.getTime())||Date.now()-generated.getTime()>72*3600e3){
+      data=await fetchOfficialTidesDirect(tideStationId);
+      generated=new Date(data.generated_at);
+    }
     if(!Number.isFinite(generated.getTime()))throw new Error('Tide data missing generated_at');
     if(Date.now()-generated.getTime()>72*3600e3)throw new Error('Tide predictions are stale (older than 72 h)');
     tideData=(data.predictions||[]).map(x=>({time:parseNoaaUTC(x.t),value:Number(x.v)}))
@@ -452,13 +479,15 @@ async function loadTides(){
     tideEvents=(data.events||[]).map(x=>({time:parseNoaaUTC(x.t),value:Number(x.v),type:x.type}))
       .filter(x=>Number.isFinite(x.time.getTime())&&Number.isFinite(x.value));
     if(tideData.length<2)throw new Error('No valid NOAA tide predictions were published');
-    renderTideGraph();renderTideEvents();
+    renderTideGraph();renderTideEvents();syncMapSliders();
   }catch(e){
     tideData=[];tideEvents=[];
     console.warn('Tide cache unavailable:',e);
     document.getElementById('tideSummary').textContent='';
     document.getElementById('tideEvents').textContent='';
     graph.innerHTML=`<div class="loading">Tide predictions unavailable: ${escapeHtml(e.message)}</div>`;
+    document.getElementById('mapTideChip').textContent='NOAA tide data unavailable';
+    syncMapSliders();
   }
 }
 
@@ -489,13 +518,19 @@ function renderTideGraph(){
     const tt=new Date(minT+q*(maxT-minT));
     return `<text class="tide-axis" x="${x(tt.getTime())}" y="${h-6}" text-anchor="${q===0?'start':q===1?'end':'middle'}">${tt.toLocaleString(undefined,{weekday:'short',hour:'numeric'})}</text>`;
   }).join('');
-  el.innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="NOAA tide graph">
+  el.innerHTML=`<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="slider" tabindex="0" aria-label="NOAA tide predictions. Click graph to scrub time">
     ${grid}<polygon class="tide-fill" points="${area}"/><polyline class="tide-line" points="${pts}"/>
     <line class="tide-cursor" x1="${cursorX}" y1="${pad.t}" x2="${cursorX}" y2="${h-pad.b}"/>
     ${sample?`<circle class="tide-dot" cx="${cursorX}" cy="${cursorY}" r="4"/>`:''}${labels}
   </svg>`;
+  el.querySelector('svg')?.addEventListener('click',event=>{
+    const rect=event.currentTarget.getBoundingClientRect();
+    const position=(event.clientX-rect.left)/Math.max(1,rect.width);
+    setSelectedTime(new Date(minT+Math.max(0,Math.min(1,position))*(maxT-minT)));
+  });
   document.getElementById('tideSummary').innerHTML=sample
     ?`<span>${escapeHtml(tideStationName)}</span><strong>${sample.value.toFixed(1)} ft</strong>`:'';
+  document.getElementById('mapTideChip').textContent=sample?`NOAA tide · ${tideStationName} · ${sample.value.toFixed(1)} ft MLLW`:'Tides unavailable';
 }
 function renderTideEvents(){
   const now=Date.now();
@@ -519,6 +554,8 @@ let currentAnimationFrame=null;
 let currentParticles=[];
 let currentBuckets=new Map();
 let currentBounds=null;
+let flowDisplay='flow'; // 'flow' | 'arrows'
+let visibleWaterSeeds=[];
 
 const flowCanvas=document.createElement('canvas');
 flowCanvas.className='current-flow-canvas';
@@ -546,7 +583,7 @@ function speedColor(kn){
   return 'rgba(255,94,94,.90)';
 }
 function bucketKey(lat,lng){
-  const cell=.012;
+  const cell=.018;
   return `${Math.floor(lat/cell)},${Math.floor(lng/cell)}`;
 }
 function buildCurrentBuckets(points){
@@ -559,7 +596,7 @@ function buildCurrentBuckets(points){
 }
 function vectorAt(lat,lng){
   if(!currentField?.points?.length)return null;
-  const cell=.012,iy=Math.floor(lat/cell),ix=Math.floor(lng/cell);
+  const cell=.018,iy=Math.floor(lat/cell),ix=Math.floor(lng/cell);
   const candidates=[];
   for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
     const arr=currentBuckets.get(`${iy+dy},${ix+dx}`);
@@ -569,65 +606,110 @@ function vectorAt(lat,lng){
   let best=[];
   for(const p of candidates){
     const d2=(p.lat-lat)**2+((p.lng-lng)*Math.cos(lat*Math.PI/180))**2;
-    if(d2>.000075)continue;
+    // Limit interpolation to about one model cell. This is spatial model guidance,
+    // NOT a precise in-channel measurement and should never extrapolate miles.
+    const stride=Number(sscofsManifest?.grid_stride)||9;
+    const radius=Math.min(.031,Math.max(.010,stride*.0055));
+    if(d2>radius*radius)continue;
     best.push({p,d2});
   }
   best=best.filter(Boolean).sort((a,b)=>a.d2-b.d2).slice(0,4);
   if(!best.length)return null;
+  const nearestKm=Math.sqrt(best[0].d2)*111.32;
   let sw=0,u=0,v=0;
   for(const x of best){const w=1/Math.max(1e-8,x.d2);sw+=w;u+=x.p.u*w;v+=x.p.v*w}
   if(!sw)return null;
   u/=sw;v/=sw;
   if(!Number.isFinite(u)||!Number.isFinite(v)||Math.abs(u)>10||Math.abs(v)>10)return null;
-  return {u,v,speedKn:Math.hypot(u,v)*KTS_PER_MPS,direction:(Math.atan2(u,v)*180/Math.PI+360)%360};
+  return {u,v,speedKn:Math.hypot(u,v)*KTS_PER_MPS,direction:(Math.atan2(u,v)*180/Math.PI+360)%360,nearestKm};
+}
+function prepareVisibleWaterSeeds(){
+  if(!currentField?.points?.length)return [];
+  const bounds=map.getBounds().pad(.05);
+  return currentField.points.filter(p=>bounds.contains([p.lat,p.lng]));
 }
 function randomParticle(){
-  if(!currentBounds)return null;
-  for(let tries=0;tries<30;tries++){
-    const lat=currentBounds.south+Math.random()*(currentBounds.north-currentBounds.south);
-    const lng=currentBounds.west+Math.random()*(currentBounds.east-currentBounds.west);
-    if(vectorAt(lat,lng))return {lat,lng,age:Math.random()*80,maxAge:90+Math.random()*100};
-  }
-  return null;
+  // Start only at actual NOAA wet cells. Do not seed randomly on shore or inland.
+  if(!visibleWaterSeeds.length)return null;
+  const seed=visibleWaterSeeds[Math.floor(Math.random()*visibleWaterSeeds.length)];
+  return {lat:seed.lat,lng:seed.lng,age:Math.random()*22,maxAge:45+Math.random()*65};
 }
 function resetParticles(){
-  const count=Math.max(90,Math.min(260,Math.round(map.getSize().x*map.getSize().y/4500)));
+  visibleWaterSeeds=prepareVisibleWaterSeeds();
+  const target=Math.max(70,Math.min(320,visibleWaterSeeds.length*6));
   currentParticles=[];
-  for(let i=0;i<count;i++){const p=randomParticle();if(p)currentParticles.push(p)}
+  for(let i=0;i<target;i++){const p=randomParticle();if(p)currentParticles.push(p)}
+}
+function drawArrowMap(){
+  clearFlowCanvas();
+  if(!currentsVisible||!currentField?.points?.length)return;
+  const size=map.getSize();
+  const shown=new Set();
+  for(const p of prepareVisibleWaterSeeds()){
+    const pos=map.latLngToContainerPoint([p.lat,p.lng]);
+    if(pos.x<0||pos.y<0||pos.x>size.x||pos.y>size.y)continue;
+    const key=`${Math.floor(pos.x/32)},${Math.floor(pos.y/32)}`;
+    if(shown.has(key))continue;shown.add(key);
+    const speed=Math.hypot(p.u,p.v)*KTS_PER_MPS;
+    if(speed<.02)continue;
+    const heading=Math.atan2(p.u,p.v);
+    const len=10+Math.min(16,speed*7);
+    const dx=Math.sin(heading),dy=-Math.cos(heading);
+    const tipX=pos.x+dx*len/2,tipY=pos.y+dy*len/2;
+    flowCtx.beginPath();flowCtx.moveTo(pos.x-dx*len/2,pos.y-dy*len/2);
+    flowCtx.lineTo(tipX,tipY);
+    flowCtx.moveTo(tipX,tipY);
+    flowCtx.lineTo(tipX-dx*7+dy*4,tipY-dy*7-dx*4);
+    flowCtx.moveTo(tipX,tipY);
+    flowCtx.lineTo(tipX-dx*7-dy*4,tipY-dy*7+dx*4);
+    flowCtx.strokeStyle=speedColor(speed);flowCtx.lineWidth=1.6;flowCtx.globalAlpha=.95;flowCtx.stroke();
+  }
+  flowCtx.globalAlpha=1;
 }
 function animateCurrents(){
   stopFlowAnimation();
   if(!currentsVisible||!currentField?.points?.length)return;
-  resizeFlowCanvas();resetParticles();
+  resizeFlowCanvas();
+  if(flowDisplay==='arrows'){drawArrowMap();return}
+  resetParticles();
+  if(!visibleWaterSeeds.length)return;
   let last=performance.now();
   function frame(now){
-    if(!currentsVisible||!currentField){stopFlowAnimation();return}
+    if(!currentsVisible||!currentField||flowDisplay!=='flow'){stopFlowAnimation();return}
     const dt=Math.min(.06,Math.max(.012,(now-last)/1000));last=now;
     const size=map.getSize();
     flowCtx.globalCompositeOperation='destination-in';
     flowCtx.fillStyle='rgba(0,0,0,.91)';flowCtx.fillRect(0,0,size.x,size.y);
     flowCtx.globalCompositeOperation='source-over';
-    const visualSeconds=55;
+    const visualSeconds=80;
     for(let i=0;i<currentParticles.length;i++){
-      let p=currentParticles[i];
+      const p=currentParticles[i];
       if(!p||p.age++>p.maxAge){currentParticles[i]=randomParticle();continue}
       const vec=vectorAt(p.lat,p.lng);
       if(!vec){currentParticles[i]=randomParticle();continue}
-      const old=L.latLng(p.lat,p.lng);const a=map.latLngToContainerPoint(old);
-      const dy=(vec.v*dt*visualSeconds)/111320;
-      const dx=(vec.u*dt*visualSeconds)/(111320*Math.max(.2,Math.cos(p.lat*Math.PI/180)));
-      p.lat+=dy;p.lng+=dx;
+      const a=map.latLngToContainerPoint([p.lat,p.lng]);
+      p.lat+=(vec.v*dt*visualSeconds)/111320;
+      p.lng+=(vec.u*dt*visualSeconds)/(111320*Math.max(.2,Math.cos(p.lat*Math.PI/180)));
       const b=map.latLngToContainerPoint([p.lat,p.lng]);
       if(b.x<-20||b.y<-20||b.x>size.x+20||b.y>size.y+20){currentParticles[i]=randomParticle();continue}
       flowCtx.beginPath();flowCtx.moveTo(a.x,a.y);flowCtx.lineTo(b.x,b.y);
-      flowCtx.strokeStyle=speedColor(vec.speedKn);flowCtx.globalAlpha=.86;
-      flowCtx.lineWidth=vec.speedKn>2?1.45:1.05;flowCtx.stroke();
+      flowCtx.strokeStyle=speedColor(vec.speedKn);flowCtx.globalAlpha=.95;
+      flowCtx.lineWidth=vec.speedKn>2?1.7:1.3;flowCtx.stroke();
     }
     flowCtx.globalAlpha=1;
     currentAnimationFrame=requestAnimationFrame(frame);
   }
   currentAnimationFrame=requestAnimationFrame(frame);
 }
+function setFlowDisplay(next){
+  flowDisplay=next;
+  document.getElementById('flowMode')?.classList.toggle('active',next==='flow');
+  document.getElementById('arrowMode')?.classList.toggle('active',next==='arrows');
+  if(currentsVisible&&currentField)animateCurrents();
+}
+document.getElementById('flowMode').addEventListener('click',()=>setFlowDisplay('flow'));
+document.getElementById('arrowMode').addEventListener('click',()=>setFlowDisplay('arrows'));
+
 let sscofsManifest=null;
 let fieldLoadSequence=0;
 const MAX_MODEL_AGE_HOURS=18; // cycle age, not forecast lead time
@@ -655,7 +737,9 @@ async function loadCurrentModel(){
       throw new Error('No model frame near the selected hour');
     if(requestId!==fieldLoadSequence)return;
     currentModel={...manifest,selected:nearest};
+    syncMapSliders();
     sscofsManifest=manifest;
+    syncMapSliders();
     document.getElementById('currentSourceBadge').textContent='SSCOFS forecast';
     status.textContent=`NOAA SSCOFS · cycle ${fmtTime(cycleDate)} · near-surface ${fmtTime(new Date(nearest.valid_time))}`;
     if(currentsVisible)await loadCurrentField();
@@ -691,6 +775,7 @@ async function loadCurrentField(){
     buildCurrentBuckets(all);
     status.textContent=`NOAA modeled near-surface flow · ${all.length.toLocaleString()} grid vectors · valid ${fmtTime(new Date(d.valid_time))}`;
     animateCurrents();readCurrentAt(map.getCenter(),'Map center');
+    syncMapSliders();
   }catch(e){
     if(e.name==='AbortError')return;
     console.warn('Model-frame error:',e);currentField=null;stopFlowAnimation();
@@ -704,24 +789,70 @@ async function readCurrentAt(latlng,label='Selected point'){
   const speedEl=document.getElementById('currentSpeed'),dirEl=document.getElementById('currentDirection');
   document.getElementById('currentLocationLabel').textContent=label;
   const vec=vectorAt(latlng.lat,latlng.lng);
-  if(vec){speedEl.textContent=`${vec.speedKn.toFixed(2)} kn`;dirEl.textContent=`→ ${pad3(vec.direction)}°T`;return}
-  speedEl.textContent=currentField?'No modeled water':'Unavailable';dirEl.textContent='';
+  if(vec){speedEl.textContent=`${vec.speedKn.toFixed(2)} kn`;dirEl.textContent=`→ ${pad3(vec.direction)}°T · ~${Math.round(vec.nearestKm*3280.84).toLocaleString()} ft from NOAA cell`;return}
+  speedEl.textContent=currentField?'No grid cell near point':'Unavailable';dirEl.textContent='';
 }
 const scheduleCurrentRead=debounce(()=>readCurrentAt(map.getCenter(),'Map center'),300);
-map.on('moveend',scheduleCurrentRead);
+map.on('moveend',()=>{scheduleCurrentRead();if(currentField&&currentsVisible)animateCurrents()});
 map.on('movestart zoomstart',()=>{stopFlowAnimation()});
 map.on('resize',()=>{resizeFlowCanvas();if(currentField)animateCurrents()});
 
-function changeTime(hours){currentTime=new Date(currentTime.getTime()+hours*3600e3);renderTideGraph();loadCurrentModel()}
+// Current and tide time scrubbing share one absolute time so the selected NOAA
+// model frame and predicted tide level represent the same instant.
+const currentRange=document.getElementById('currentTimeline');
+const tideRange=document.getElementById('tideTimeline');
+const timeDebounced=debounce(()=>loadCurrentModel(),160);
+function syncMapSliders(){
+  const frames=(sscofsManifest?.frames||[]);
+  const currentLabel=document.getElementById('currentTimelineValue');
+  if(frames.length){
+    currentRange.disabled=false;currentRange.max=String(frames.length-1);
+    let best=0;
+    frames.forEach((f,i)=>{if(Math.abs(new Date(f.valid_time)-currentTime)<Math.abs(new Date(frames[best].valid_time)-currentTime))best=i});
+    currentRange.value=String(best);
+    currentLabel.textContent=fmtTime(new Date(frames[best].valid_time));
+  }else{currentRange.disabled=true;currentLabel.textContent='No verified forecast'}
+  const tideLabel=document.getElementById('tideTimelineValue');
+  if(tideData.length>1){
+    tideRange.disabled=false;tideRange.max=String(tideData.length-1);
+    let best=0;
+    tideData.forEach((f,i)=>{if(Math.abs(f.time-currentTime)<Math.abs(tideData[best].time-currentTime))best=i});
+    tideRange.value=String(best);
+    tideLabel.textContent=`${tideData[best].value.toFixed(1)} ft · ${fmtTime(tideData[best].time)}`;
+  }else{tideRange.disabled=true;tideLabel.textContent='No verified tides'}
+  document.getElementById('selectedTimeValue').textContent=fmtTime(currentTime);
+}
+function setSelectedTime(time){
+  currentTime=new Date(time);
+  if(!Number.isFinite(currentTime.getTime()))return;
+  document.getElementById('currentTimeLabel').textContent=fmtTime(currentTime);
+  renderTideGraph();syncMapSliders();timeDebounced();
+}
+currentRange.addEventListener('input',e=>{
+  const frame=sscofsManifest?.frames?.[Number(e.target.value)];
+  if(frame)setSelectedTime(new Date(frame.valid_time));
+});
+tideRange.addEventListener('input',e=>{
+  const datum=tideData[Number(e.target.value)];
+  if(datum)setSelectedTime(datum.time);
+});
+function changeTime(hours){setSelectedTime(new Date(currentTime.getTime()+hours*3600e3));}
 document.getElementById('timeBack').addEventListener('click',()=>changeTime(-1));
 document.getElementById('timeForward').addEventListener('click',()=>changeTime(1));
-document.getElementById('timeNow').addEventListener('click',()=>{currentTime=roundHour(new Date());renderTideGraph();loadCurrentModel()});
+document.getElementById('timeNow').addEventListener('click',()=>setSelectedTime(roundHour(new Date())));
 document.getElementById('timePlay').addEventListener('click',e=>{
   if(playTimer){clearInterval(playTimer);playTimer=null;e.currentTarget.textContent='▶ Play';return}
-  e.currentTarget.textContent='❚❚ Pause';playTimer=setInterval(()=>changeTime(1),1350);
+  e.currentTarget.textContent='❚❚ Pause';
+  playTimer=setInterval(()=>{
+    const frames=sscofsManifest?.frames||[];
+    const next=frames.find(x=>new Date(x.valid_time).getTime()>currentTime.getTime()+30000);
+    if(next)setSelectedTime(new Date(next.valid_time));
+    else changeTime(1);
+  },1650);
 });
 document.getElementById('toggleCurrents').addEventListener('click',e=>{
   currentsVisible=!currentsVisible;e.currentTarget.classList.toggle('active',currentsVisible);
+  e.currentTarget.textContent=currentsVisible?'Currents ON':'Currents OFF';
   if(currentsVisible)loadCurrentModel();else stopFlowAnimation();
 });
 

@@ -11,6 +11,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 
@@ -28,9 +29,16 @@ def get_json(url, timeout=25):
     req = urllib.request.Request(url, headers={
         'User-Agent': 'RunTimeDiveCurrent/1.0 (public dive-planning cache)',
         'Accept': 'application/json'})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        raw = r.read(5_000_000)
-    return json.loads(raw)
+    last=None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                raw = r.read(5_000_000)
+            return json.loads(raw)
+        except Exception as error:
+            last=error
+            if attempt<2:time.sleep(attempt+1)
+    raise last
 
 def get_predictions(station, begin, end, interval):
     params = dict(product='predictions', application='RunTimeDiveCurrent',
@@ -64,7 +72,19 @@ def main():
     end = (now + timedelta(days=3)).strftime('%Y%m%d')
     output = ROOT / 'tides'
     output.mkdir(parents=True, exist_ok=True)
-    rows = get_json(STATIONS_URL).get('stations', [])
+    # Keep Tacoma usable if NOAA metadata enumeration is temporarily unavailable.
+    # All actual tide heights are still obtained from NOAA and never fabricated.
+    fallback=[
+        {'id':'9446484','name':'Tacoma, Commencement Bay','lat':47.2667,'lng':-122.4167},
+        {'id':'9447130','name':'Seattle','lat':47.6026,'lng':-122.3393},
+        {'id':'9444900','name':'Port Townsend','lat':48.1112,'lng':-122.7597},
+        {'id':'9444090','name':'Port Angeles','lat':48.1250,'lng':-123.4400},
+    ]
+    try:
+        rows = get_json(STATIONS_URL).get('stations', [])
+    except Exception as exc:
+        rows=[]
+        print('NOAA station metadata unavailable, using known station IDs:',exc,file=sys.stderr)
     candidates = []
     for row in rows:
         lat, lng = float(row.get('lat',0)), float(row.get('lng',0))
@@ -73,6 +93,9 @@ def main():
                 and re.fullmatch(r'\d{7}',sid)
                 and any(term in name.lower() for term in MATCH)):
             candidates.append({'name':name, 'id':sid, 'lat':lat, 'lng':lng})
+    existing_ids={s['id'] for s in candidates}
+    for st in fallback:
+        if st['id'] not in existing_ids:candidates.append(st)
     candidates.sort(key=lambda st:(0 if st['id']=='9446484' else 1, st['name']))
     candidates = candidates[:MAX_STATIONS]
     successful = []
@@ -80,7 +103,12 @@ def main():
         sid=st['id']
         try:
             predictions = get_predictions(sid, start, end, '6')
-            events = get_predictions(sid, start, end, 'hilo')
+            # High/low events are optional. Preserve the chart even when a
+            # subordinate station does not offer the HI/LO interval.
+            try:events = get_predictions(sid, start, end, 'hilo')
+            except Exception as exc:
+                events=[]
+                print(f'NOAA high/low events missing for {sid}: {exc}',file=sys.stderr)
             payload = {'source':'NOAA CO-OPS','station_id':sid,'name':st['name'],
                        'generated_at':now.strftime('%Y-%m-%dT%H:%M:%SZ'),
                        'timezone':'UTC','datum':'MLLW','units':'feet',
