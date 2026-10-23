@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dive Current | RunTime Dive Systems</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<link rel="stylesheet" href="dive-current.css" />
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <h1>Dive Current</h1>
+    <p>Puget Sound bathymetry, tides, modeled currents & DPV planning</p>
+  </div>
+  <div class="build" id="buildMarker">v1.0 · Static</div>
+</header>
+
+<main class="layout">
+  <section class="map-panel">
+    <div id="map"></div>
+
+    <div class="map-toolbar">
+      <button data-mode="pan" class="active">Pan</button>
+      <button data-mode="depth">Depth marker</button>
+      <button data-mode="route">Measure route</button>
+      <button id="undoLeg">Undo leg</button>
+      <button id="clearRoute">Clear route</button>
+    </div>
+
+    <div class="layer-toolbar">
+      <button id="bathyMode" class="active">Puget Sound Bathymetry</button>
+      <button id="standardMode">Standard map</button>
+      <button id="toggleCurrents" class="active">Current flow</button>
+    </div>
+
+    <div id="mapMessage" class="map-message hidden"></div>
+
+    <div class="legend">
+      <span><i class="swatch bathy"></i> WA DNR grayscale relief</span>
+      <span><i class="swatch contour"></i> 20 ft contours</span>
+      <span><i class="swatch current"></i> NOAA SSCOFS forecast (when verified)</span>
+      <span><i class="swatch route"></i> DPV route</span>
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <section class="card current-card">
+      <div class="card-title-row">
+        <h2>Surface current</h2>
+        <span id="currentSourceBadge" class="badge">NOAA</span>
+      </div>
+      <div class="current-readout">
+        <strong id="currentSpeed">Loading…</strong>
+        <span id="currentDirection"></span>
+      </div>
+      <p id="currentLocationLabel">Map center</p>
+      <p id="currentTimeLabel">Loading NOAA SSCOFS forecast…</p>
+      <div class="time-controls">
+        <button id="timeBack">−1h</button>
+        <button id="timePlay">▶ Play</button>
+        <button id="timeForward">+1h</button>
+        <button id="timeNow">Now</button>
+      </div>
+      <div class="speed-legend">
+        <span>0 kn</span><div class="speed-ramp"></div><span>4+ kn</span>
+      </div>
+      <p id="currentStatus" class="status-text"></p>
+    </section>
+
+    <section class="card">
+      <h2>Dive planning</h2>
+      <div class="metric"><span>Total route</span><strong id="routeTotal">0 ft</strong></div>
+      <label>Estimated DPV speed · knots
+        <input id="dpvSpeed" type="number" min="0" step="0.1" placeholder="optional" />
+      </label>
+      <div class="metric"><span>Estimated travel time</span><strong id="travelTime">—</strong></div>
+      <div id="legs" class="legs empty">Tap Measure route, then add route points.</div>
+      <p class="note">Each leg is labeled with horizontal distance and true bearing.</p>
+    </section>
+
+    <section class="card">
+      <h2>Depth markers</h2>
+      <p>Marine depth markers query the WA DNR CoNED raster and are shown in feet relative to MLLW. Tap a marker or use Delete to remove it.</p>
+      <div id="depthList" class="empty">No depth markers.</div>
+    </section>
+
+    <section class="card">
+      <h2>Tides</h2>
+      <label>Tide station
+        <select id="tideStation">
+          <option value="9446484">Tacoma, Commencement Bay, Sitcum Waterway</option>
+        </select>
+      </label>
+      <div id="tideSummary" class="tide-summary"></div>
+      <div id="tideGraph" class="tide-graph">
+        <div class="loading">Loading NOAA tide predictions…</div>
+      </div>
+      <div id="tideEvents" class="tide-events"></div>
+      <p class="note">Cached official NOAA predictions (UTC converted to your local timezone); feet above MLLW.</p>
+    </section>
+
+    <section class="card source-card">
+      <h2>Data sources</h2>
+      <p><strong>Bathymetry:</strong> Washington DNR 1 m CoNED MLLW raster, grayscale shaded relief, with close-zoom 20 ft contours.</p>
+      <p><strong>Tides:</strong> NOAA CO-OPS predictions.</p>
+      <p><strong>Currents:</strong> NOAA SSCOFS near-surface model guidance, processed by GitHub Actions; timestamps and availability are checked.</p>
+      <p class="warning-text">Planning aid only. Model guidance and bathymetry are not a substitute for navigation, site knowledge, or dive-team judgment.</p>
+    </section>
+  </aside>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="config.js"></script>
+<script src="dive-current.js"></script>
+<footer class="static-note">RunTime Dive Systems · NOAA model currents are forecast guidance, not measurements. Missing or stale model data are deliberately hidden. Do not use this tool as primary navigation or for dive-decision thresholds.</footer>
+</body>
+</html>

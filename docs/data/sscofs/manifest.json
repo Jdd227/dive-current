@@ -1,0 +1,6 @@
+{
+  "status": "unavailable",
+  "message": "No verified NOAA SSCOFS forecast has been processed by GitHub Actions yet.",
+  "cycle_time": null,
+  "frames": []
+}
