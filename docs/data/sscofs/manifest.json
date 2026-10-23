@@ -2,69 +2,54 @@
   "status": "ok",
   "source": "NOAA SSCOFS",
   "cycle_time": "2026-10-22T21:00:00Z",
-  "generated_at": "2026-10-23T02:50:27Z",
-  "grid_stride": 9,
+  "generated_at": "2026-10-23T03:14:56Z",
+  "grid_stride": 3,
   "sample_depth_m": 0.0,
   "frames": [
     {
       "file": "data/sscofs/frame-20261022T220000Z.json",
       "valid_time": "2026-10-22T22:00:00Z",
-      "points": 803
+      "points": 7208
     },
     {
       "file": "data/sscofs/frame-20261023T000000Z.json",
       "valid_time": "2026-10-23T00:00:00Z",
-      "points": 803
+      "points": 7209
     },
     {
       "file": "data/sscofs/frame-20261023T030000Z.json",
       "valid_time": "2026-10-23T03:00:00Z",
-      "points": 802
+      "points": 7198
     },
     {
       "file": "data/sscofs/frame-20261023T060000Z.json",
       "valid_time": "2026-10-23T06:00:00Z",
-      "points": 801
+      "points": 7186
     },
     {
       "file": "data/sscofs/frame-20261023T090000Z.json",
       "valid_time": "2026-10-23T09:00:00Z",
-      "points": 803
+      "points": 7211
     },
     {
       "file": "data/sscofs/frame-20261023T120000Z.json",
       "valid_time": "2026-10-23T12:00:00Z",
-      "points": 803
+      "points": 7210
     },
     {
       "file": "data/sscofs/frame-20261023T150000Z.json",
       "valid_time": "2026-10-23T15:00:00Z",
-      "points": 802
+      "points": 7197
     },
     {
       "file": "data/sscofs/frame-20261023T180000Z.json",
       "valid_time": "2026-10-23T18:00:00Z",
-      "points": 802
+      "points": 7190
     },
     {
       "file": "data/sscofs/frame-20261023T210000Z.json",
       "valid_time": "2026-10-23T21:00:00Z",
-      "points": 803
-    },
-    {
-      "file": "data/sscofs/frame-20261024T030000Z.json",
-      "valid_time": "2026-10-24T03:00:00Z",
-      "points": 802
-    },
-    {
-      "file": "data/sscofs/frame-20261024T090000Z.json",
-      "valid_time": "2026-10-24T09:00:00Z",
-      "points": 803
-    },
-    {
-      "file": "data/sscofs/frame-20261024T210000Z.json",
-      "valid_time": "2026-10-24T21:00:00Z",
-      "points": 803
+      "points": 7210
     }
   ]
 }
