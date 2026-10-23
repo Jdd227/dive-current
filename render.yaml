@@ -1,0 +1,18 @@
+# Optional Render Blueprint: deploy this repository as one Python-backed web service.
+# DO NOT set custom-domain DNS until Render provides the actual destination.
+services:
+  - type: web
+    name: runtime-dive-current
+    runtime: python
+    rootDir: app
+    buildCommand: "python3 -m compileall -q ."
+    startCommand: "python3 serve.py"
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: DIVE_CURRENT_ALLOWED_ORIGINS
+        value: "https://current.runtimedivesystems.com"
+      # If you have the original SSCOFS vector service, configure it in Render.
+      # - key: DIVE_CURRENT_SSCOFS_API_URL
+      #   sync: false
