@@ -1,30 +1,20 @@
 {
   "status": "ok",
   "source": "NOAA SSCOFS",
-  "cycle_time": "2026-10-24T09:00:00Z",
-  "generated_at": "2026-10-24T14:33:36Z",
+  "cycle_time": "2026-10-24T15:00:00Z",
+  "generated_at": "2026-10-24T19:29:27Z",
   "grid_stride": 3,
   "sample_depth_m": 0.0,
   "frames": [
     {
-      "file": "data/sscofs/frame-20261024T100000Z.json",
-      "valid_time": "2026-10-24T10:00:00Z",
-      "points": 7210
-    },
-    {
-      "file": "data/sscofs/frame-20261024T120000Z.json",
-      "valid_time": "2026-10-24T12:00:00Z",
-      "points": 7209
-    },
-    {
-      "file": "data/sscofs/frame-20261024T150000Z.json",
-      "valid_time": "2026-10-24T15:00:00Z",
-      "points": 7211
+      "file": "data/sscofs/frame-20261024T160000Z.json",
+      "valid_time": "2026-10-24T16:00:00Z",
+      "points": 7199
     },
     {
       "file": "data/sscofs/frame-20261024T180000Z.json",
       "valid_time": "2026-10-24T18:00:00Z",
-      "points": 7188
+      "points": 7190
     },
     {
       "file": "data/sscofs/frame-20261024T210000Z.json",
@@ -44,12 +34,17 @@
     {
       "file": "data/sscofs/frame-20261025T060000Z.json",
       "valid_time": "2026-10-25T06:00:00Z",
-      "points": 7164
+      "points": 7161
     },
     {
       "file": "data/sscofs/frame-20261025T090000Z.json",
       "valid_time": "2026-10-25T09:00:00Z",
       "points": 7199
+    },
+    {
+      "file": "data/sscofs/frame-20261025T120000Z.json",
+      "valid_time": "2026-10-25T12:00:00Z",
+      "points": 7208
     },
     {
       "file": "data/sscofs/frame-20261025T150000Z.json",
@@ -62,9 +57,14 @@
       "points": 7210
     },
     {
-      "file": "data/sscofs/frame-20261026T090000Z.json",
-      "valid_time": "2026-10-26T09:00:00Z",
-      "points": 7181
+      "file": "data/sscofs/frame-20261026T030000Z.json",
+      "valid_time": "2026-10-26T03:00:00Z",
+      "points": 7206
+    },
+    {
+      "file": "data/sscofs/frame-20261026T150000Z.json",
+      "valid_time": "2026-10-26T15:00:00Z",
+      "points": 7209
     }
   ]
 }
