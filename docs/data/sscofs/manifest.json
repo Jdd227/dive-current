@@ -1,34 +1,14 @@
 {
   "status": "ok",
   "source": "NOAA SSCOFS",
-  "cycle_time": "2026-10-28T03:00:00Z",
-  "generated_at": "2026-10-28T11:21:23Z",
+  "cycle_time": "2026-10-28T15:00:00Z",
+  "generated_at": "2026-10-28T21:39:31Z",
   "grid_stride": 3,
   "sample_depth_m": 0.0,
   "frames": [
     {
-      "file": "data/sscofs/frame-20261028T040000Z.json",
-      "valid_time": "2026-10-28T04:00:00Z",
-      "points": 7207
-    },
-    {
-      "file": "data/sscofs/frame-20261028T060000Z.json",
-      "valid_time": "2026-10-28T06:00:00Z",
-      "points": 7165
-    },
-    {
-      "file": "data/sscofs/frame-20261028T090000Z.json",
-      "valid_time": "2026-10-28T09:00:00Z",
-      "points": 7152
-    },
-    {
-      "file": "data/sscofs/frame-20261028T120000Z.json",
-      "valid_time": "2026-10-28T12:00:00Z",
-      "points": 7210
-    },
-    {
-      "file": "data/sscofs/frame-20261028T150000Z.json",
-      "valid_time": "2026-10-28T15:00:00Z",
+      "file": "data/sscofs/frame-20261028T160000Z.json",
+      "valid_time": "2026-10-28T16:00:00Z",
       "points": 7208
     },
     {
@@ -52,9 +32,19 @@
       "points": 7209
     },
     {
+      "file": "data/sscofs/frame-20261029T060000Z.json",
+      "valid_time": "2026-10-29T06:00:00Z",
+      "points": 7173
+    },
+    {
       "file": "data/sscofs/frame-20261029T090000Z.json",
       "valid_time": "2026-10-29T09:00:00Z",
-      "points": 7139
+      "points": 7141
+    },
+    {
+      "file": "data/sscofs/frame-20261029T120000Z.json",
+      "valid_time": "2026-10-29T12:00:00Z",
+      "points": 7192
     },
     {
       "file": "data/sscofs/frame-20261029T150000Z.json",
@@ -62,8 +52,18 @@
       "points": 7208
     },
     {
+      "file": "data/sscofs/frame-20261029T210000Z.json",
+      "valid_time": "2026-10-29T21:00:00Z",
+      "points": 7210
+    },
+    {
       "file": "data/sscofs/frame-20261030T030000Z.json",
       "valid_time": "2026-10-30T03:00:00Z",
+      "points": 7209
+    },
+    {
+      "file": "data/sscofs/frame-20261030T150000Z.json",
+      "valid_time": "2026-10-30T15:00:00Z",
       "points": 7209
     }
   ]
