@@ -1,25 +1,15 @@
 {
   "status": "ok",
   "source": "NOAA SSCOFS",
-  "cycle_time": "2026-10-29T21:00:00Z",
-  "generated_at": "2026-10-30T02:37:00Z",
+  "cycle_time": "2026-10-30T03:00:00Z",
+  "generated_at": "2026-10-30T11:24:33Z",
   "grid_stride": 3,
   "sample_depth_m": 0.0,
   "frames": [
     {
-      "file": "data/sscofs/frame-20261029T220000Z.json",
-      "valid_time": "2026-10-29T22:00:00Z",
+      "file": "data/sscofs/frame-20261030T040000Z.json",
+      "valid_time": "2026-10-30T04:00:00Z",
       "points": 7210
-    },
-    {
-      "file": "data/sscofs/frame-20261030T000000Z.json",
-      "valid_time": "2026-10-30T00:00:00Z",
-      "points": 7210
-    },
-    {
-      "file": "data/sscofs/frame-20261030T030000Z.json",
-      "valid_time": "2026-10-30T03:00:00Z",
-      "points": 7209
     },
     {
       "file": "data/sscofs/frame-20261030T060000Z.json",
@@ -29,7 +19,7 @@
     {
       "file": "data/sscofs/frame-20261030T090000Z.json",
       "valid_time": "2026-10-30T09:00:00Z",
-      "points": 7145
+      "points": 7147
     },
     {
       "file": "data/sscofs/frame-20261030T120000Z.json",
@@ -52,6 +42,11 @@
       "points": 7210
     },
     {
+      "file": "data/sscofs/frame-20261031T000000Z.json",
+      "valid_time": "2026-10-31T00:00:00Z",
+      "points": 7210
+    },
+    {
       "file": "data/sscofs/frame-20261031T030000Z.json",
       "valid_time": "2026-10-31T03:00:00Z",
       "points": 7209
@@ -59,11 +54,16 @@
     {
       "file": "data/sscofs/frame-20261031T090000Z.json",
       "valid_time": "2026-10-31T09:00:00Z",
-      "points": 7148
+      "points": 7153
     },
     {
-      "file": "data/sscofs/frame-20261031T210000Z.json",
-      "valid_time": "2026-10-31T21:00:00Z",
+      "file": "data/sscofs/frame-20261031T150000Z.json",
+      "valid_time": "2026-10-31T15:00:00Z",
+      "points": 7211
+    },
+    {
+      "file": "data/sscofs/frame-20261101T030000Z.json",
+      "valid_time": "2026-11-01T03:00:00Z",
       "points": 7210
     }
   ]
