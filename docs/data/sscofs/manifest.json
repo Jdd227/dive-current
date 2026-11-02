@@ -1,40 +1,20 @@
 {
   "status": "ok",
   "source": "NOAA SSCOFS",
-  "cycle_time": "2026-11-01T21:00:00Z",
-  "generated_at": "2026-11-02T02:31:38Z",
+  "cycle_time": "2026-11-02T09:00:00Z",
+  "generated_at": "2026-11-02T13:30:32Z",
   "grid_stride": 3,
   "sample_depth_m": 0.0,
   "frames": [
     {
-      "file": "data/sscofs/frame-20261101T220000Z.json",
-      "valid_time": "2026-11-01T22:00:00Z",
-      "points": 7210
-    },
-    {
-      "file": "data/sscofs/frame-20261102T000000Z.json",
-      "valid_time": "2026-11-02T00:00:00Z",
-      "points": 7210
-    },
-    {
-      "file": "data/sscofs/frame-20261102T030000Z.json",
-      "valid_time": "2026-11-02T03:00:00Z",
-      "points": 7210
-    },
-    {
-      "file": "data/sscofs/frame-20261102T060000Z.json",
-      "valid_time": "2026-11-02T06:00:00Z",
-      "points": 7210
-    },
-    {
-      "file": "data/sscofs/frame-20261102T090000Z.json",
-      "valid_time": "2026-11-02T09:00:00Z",
-      "points": 7191
+      "file": "data/sscofs/frame-20261102T100000Z.json",
+      "valid_time": "2026-11-02T10:00:00Z",
+      "points": 7175
     },
     {
       "file": "data/sscofs/frame-20261102T120000Z.json",
       "valid_time": "2026-11-02T12:00:00Z",
-      "points": 7163
+      "points": 7160
     },
     {
       "file": "data/sscofs/frame-20261102T150000Z.json",
@@ -52,9 +32,19 @@
       "points": 7207
     },
     {
+      "file": "data/sscofs/frame-20261103T000000Z.json",
+      "valid_time": "2026-11-03T00:00:00Z",
+      "points": 7210
+    },
+    {
       "file": "data/sscofs/frame-20261103T030000Z.json",
       "valid_time": "2026-11-03T03:00:00Z",
       "points": 7208
+    },
+    {
+      "file": "data/sscofs/frame-20261103T060000Z.json",
+      "valid_time": "2026-11-03T06:00:00Z",
+      "points": 7210
     },
     {
       "file": "data/sscofs/frame-20261103T090000Z.json",
@@ -62,9 +52,19 @@
       "points": 7211
     },
     {
+      "file": "data/sscofs/frame-20261103T150000Z.json",
+      "valid_time": "2026-11-03T15:00:00Z",
+      "points": 7178
+    },
+    {
       "file": "data/sscofs/frame-20261103T210000Z.json",
       "valid_time": "2026-11-03T21:00:00Z",
       "points": 7207
+    },
+    {
+      "file": "data/sscofs/frame-20261104T090000Z.json",
+      "valid_time": "2026-11-04T09:00:00Z",
+      "points": 7210
     }
   ]
 }
