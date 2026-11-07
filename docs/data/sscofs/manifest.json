@@ -1,25 +1,15 @@
 {
   "status": "ok",
   "source": "NOAA SSCOFS",
-  "cycle_time": "2026-11-06T21:00:00Z",
-  "generated_at": "2026-11-07T02:48:32Z",
+  "cycle_time": "2026-11-07T03:00:00Z",
+  "generated_at": "2026-11-07T11:44:09Z",
   "grid_stride": 3,
   "sample_depth_m": 0.0,
   "frames": [
     {
-      "file": "data/sscofs/frame-20261106T220000Z.json",
-      "valid_time": "2026-11-06T22:00:00Z",
-      "points": 7208
-    },
-    {
-      "file": "data/sscofs/frame-20261107T000000Z.json",
-      "valid_time": "2026-11-07T00:00:00Z",
-      "points": 7208
-    },
-    {
-      "file": "data/sscofs/frame-20261107T030000Z.json",
-      "valid_time": "2026-11-07T03:00:00Z",
-      "points": 7196
+      "file": "data/sscofs/frame-20261107T040000Z.json",
+      "valid_time": "2026-11-07T04:00:00Z",
+      "points": 7183
     },
     {
       "file": "data/sscofs/frame-20261107T060000Z.json",
@@ -29,7 +19,7 @@
     {
       "file": "data/sscofs/frame-20261107T090000Z.json",
       "valid_time": "2026-11-07T09:00:00Z",
-      "points": 7211
+      "points": 7210
     },
     {
       "file": "data/sscofs/frame-20261107T120000Z.json",
@@ -52,6 +42,11 @@
       "points": 7210
     },
     {
+      "file": "data/sscofs/frame-20261108T000000Z.json",
+      "valid_time": "2026-11-08T00:00:00Z",
+      "points": 7208
+    },
+    {
       "file": "data/sscofs/frame-20261108T030000Z.json",
       "valid_time": "2026-11-08T03:00:00Z",
       "points": 7201
@@ -59,12 +54,17 @@
     {
       "file": "data/sscofs/frame-20261108T090000Z.json",
       "valid_time": "2026-11-08T09:00:00Z",
-      "points": 7203
+      "points": 7204
     },
     {
-      "file": "data/sscofs/frame-20261108T210000Z.json",
-      "valid_time": "2026-11-08T21:00:00Z",
-      "points": 7210
+      "file": "data/sscofs/frame-20261108T150000Z.json",
+      "valid_time": "2026-11-08T15:00:00Z",
+      "points": 7209
+    },
+    {
+      "file": "data/sscofs/frame-20261109T030000Z.json",
+      "valid_time": "2026-11-09T03:00:00Z",
+      "points": 7206
     }
   ]
 }
